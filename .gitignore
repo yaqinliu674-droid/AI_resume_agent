@@ -1,0 +1,11 @@
+.env
+.streamlit/secrets.toml
+.venv/
+.venv_codex/
+__pycache__/
+*.pre_mvp_backup
+task_plan.md
+findings.md
+progress.md
+qa_render/
+.test_logs/
