@@ -1,9 +1,10 @@
 import os
 from io import BytesIO
-from xml.sax.saxutils import escape
-from zipfile import ZIP_DEFLATED, ZipFile
 
 import streamlit as st
+from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Inches, Pt
 from dotenv import load_dotenv
 
 from career_core import (
@@ -123,67 +124,78 @@ def continue_base_to_direction() -> None:
 
 
 def build_word_document(markdown: str, title: str) -> bytes:
-    paragraphs: list[str] = []
-    for line in markdown.splitlines():
+    document = Document()
+    section = document.sections[0]
+    section.top_margin = Inches(0.65)
+    section.bottom_margin = Inches(0.65)
+    section.left_margin = Inches(0.75)
+    section.right_margin = Inches(0.75)
+
+    normal = document.styles["Normal"]
+    normal.font.name = "Microsoft YaHei"
+    normal.font.size = Pt(10.5)
+
+    heading = document.add_heading(title, level=0)
+    heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    lines = markdown.splitlines()
+    if lines and lines[0].strip().lstrip("#").strip() == title:
+        lines = lines[1:]
+
+    for line in lines:
         text = line.strip()
         if not text:
-            paragraphs.append("<w:p/>")
+            document.add_paragraph()
             continue
-        style = "Normal"
         if text.startswith("### "):
-            text, style = text[4:], "Heading2"
+            document.add_heading(text[4:], level=2)
         elif text.startswith("## "):
-            text, style = text[3:], "Heading2"
+            document.add_heading(text[3:], level=2)
         elif text.startswith("# "):
-            text, style = text[2:], "Heading1"
+            document.add_heading(text[2:], level=1)
         elif text.startswith(("- ", "* ")):
             text = text[2:]
-        text = text.replace("**", "").replace("__", "").replace("`", "")
-        paragraphs.append(
-            '<w:p><w:pPr><w:pStyle w:val="'
-            f'{style}"/></w:pPr><w:r><w:t xml:space="preserve">'
-            f"{escape(text)}</w:t></w:r></w:p>"
-        )
+            paragraph = document.add_paragraph(style="List Bullet")
+            paragraph.add_run(text.replace("**", "").replace("__", "").replace("`", ""))
+        else:
+            document.add_paragraph(text.replace("**", "").replace("__", "").replace("`", ""))
 
-    document_xml = f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-  <w:body>
-    <w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr><w:r><w:t>{escape(title)}</w:t></w:r></w:p>
-    {''.join(paragraphs)}
-    <w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr>
-  </w:body>
-</w:document>'''
-    styles_xml = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-  <w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Aptos" w:hAnsi="Aptos" w:eastAsia="Microsoft YaHei"/></w:rPr></w:rPrDefault></w:docDefaults>
-  <w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:rPr><w:sz w:val="22"/></w:rPr></w:style>
-  <w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:rPr><w:b/><w:sz w:val="32"/></w:rPr></w:style>
-  <w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="Heading 1"/><w:basedOn w:val="Normal"/><w:rPr><w:b/><w:sz w:val="28"/></w:rPr></w:style>
-  <w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="Heading 2"/><w:basedOn w:val="Normal"/><w:rPr><w:b/><w:sz w:val="24"/></w:rPr></w:style>
-</w:styles>'''
-    content_types = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-  <Default Extension="xml" ContentType="application/xml"/>
-  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
-  <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
-</Types>'''
-    relationships = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
-</Relationships>'''
-    document_relationships = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
-</Relationships>'''
-    document = BytesIO()
-    with ZipFile(document, "w", ZIP_DEFLATED) as archive:
-        archive.writestr("[Content_Types].xml", content_types)
-        archive.writestr("_rels/.rels", relationships)
-        archive.writestr("word/document.xml", document_xml)
-        archive.writestr("word/styles.xml", styles_xml)
-        archive.writestr("word/_rels/document.xml.rels", document_relationships)
-    return document.getvalue()
+    buffer = BytesIO()
+    document.save(buffer)
+    return buffer.getvalue()
+
+
+def build_resume_markdown(result: dict, position_name: str = "") -> str:
+    bullets = result.get("resume_bullets", [])
+    lines = ["# 岗位定制简历"]
+    if position_name:
+        lines.extend(["", "## 求职目标", position_name])
+
+    strengths = result.get("strengths", [])
+    if strengths:
+        lines.extend(["", "## 核心优势"])
+        lines.extend(f"- {item}" for item in strengths[:4])
+
+    lines.extend(["", "## 项目与经历亮点"])
+    if bullets:
+        lines.extend(f"- {item.get('text', '')}" for item in bullets)
+    else:
+        lines.append("- 当前事实不足，请先补充真实经历后再生成简历。")
+
+    unknowns = result.get("unknowns", [])
+    if unknowns:
+        lines.extend(["", "## 投递前待确认"])
+        lines.extend(f"- {item}" for item in unknowns[:4])
+
+    lines.extend(
+        [
+            "",
+            "## 使用说明",
+            "请把姓名、电话、邮箱、教育经历等个人信息补到页首后再投递。",
+            "所有数据和职责应以真实经历为准，不能把课程项目写成企业项目。",
+        ]
+    )
+    return "\n".join(lines).strip()
 
 
 def report_markdown(result: dict) -> str:
@@ -468,6 +480,8 @@ def render_target_flow() -> None:
 
 def render_target_result() -> None:
     result = st.session_state.target_result or {}
+    context = st.session_state.get("target_context") or {}
+    position_name = context.get("position", "")
     st.title("岗位定向结果")
     if st.session_state.notice:
         st.warning(st.session_state.notice, icon=":material/verified_user:")
@@ -572,24 +586,30 @@ def render_target_result() -> None:
             st.markdown(f"**{index}. {item}**")
 
     markdown = report_markdown(result)
-    st.download_button(
-        "下载完整报告（Word）",
-        build_word_document(markdown, "AI 岗位定向分析报告"),
-        file_name="AI岗位定向分析报告.docx",
-        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        icon=":material/download:",
-        width="stretch",
-    )
-    resume_markdown = "\n".join(f"- {item.get('text', '')}" for item in bullets)
-    st.download_button(
-        "下载定制简历（Word）",
-        build_word_document(resume_markdown, "岗位定制简历"),
-        file_name="岗位定制简历.docx",
-        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        icon=":material/download:",
-        width="stretch",
-        key="download_resume",
-    )
+    resume_markdown = build_resume_markdown(result, position_name)
+    st.subheader("9. 下载材料")
+    with st.container(border=True):
+        st.markdown("#### 简历预览")
+        st.caption("下载的 Word 会按这个结构排版；页首个人信息请在 Word 里补齐后再投递。")
+        st.markdown(resume_markdown)
+        with st.container(horizontal=True, horizontal_alignment="distribute"):
+            st.download_button(
+                "下载定制简历（Word）",
+                build_word_document(resume_markdown, "岗位定制简历"),
+                file_name="岗位定制简历.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                icon=":material/download:",
+                width="stretch",
+                key="download_resume",
+            )
+            st.download_button(
+                "下载分析报告（Word）",
+                build_word_document(markdown, "AI 岗位定向分析报告"),
+                file_name="AI岗位定向分析报告.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                icon=":material/download:",
+                width="stretch",
+            )
 
 
 def render_base_flow() -> None:
