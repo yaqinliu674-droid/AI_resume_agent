@@ -274,7 +274,13 @@ class StreamlitSmokeTests(unittest.TestCase):
         headings = [item.value for item in app.subheader]
         self.assertIn("1. 岗位匹配结论", headings)
         self.assertIn("8. 面试官可能追问", headings)
-        self.assertEqual(len(app.get("download_button")), 2)
+        self.assertIn("9. 可复制简历结果", headings)
+        self.assertEqual(len(app.get("download_button")), 0)
+        resume_sections = [
+            area.value for area in app.text_area if area.key.startswith("target_resume_section")
+        ]
+        self.assertTrue(any("姓名：请补充" in value for value in resume_sections))
+        self.assertTrue(any("completed 8 posts" in value for value in resume_sections))
 
     def test_base_resume_carries_into_target_without_retyping(self):
         os.environ["AI_RESUME_OFFLINE"] = "1"
