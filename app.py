@@ -165,9 +165,28 @@ def build_word_document(markdown: str, title: str) -> bytes:
     return buffer.getvalue()
 
 
+def markdown_to_plain_text(markdown: str) -> str:
+    lines: list[str] = []
+    for line in markdown.splitlines():
+        text = line.strip()
+        if text.startswith("# "):
+            text = text[2:].strip()
+        elif text.startswith("## "):
+            text = text[3:].strip()
+        elif text.startswith("### "):
+            text = text[4:].strip()
+        text = text.replace("**", "").replace("__", "").replace("`", "")
+        lines.append(text)
+    return "\n".join(lines).strip()
+
+
 def build_resume_markdown(result: dict, position_name: str = "") -> str:
     bullets = result.get("resume_bullets", [])
-    lines = ["# 岗位定制简历"]
+    lines = [
+        "# 岗位定制简历",
+        "",
+        "姓名：请补充    手机：请补充    邮箱：请补充    城市：请补充",
+    ]
     if position_name:
         lines.extend(["", "## 求职目标", position_name])
 
@@ -182,6 +201,19 @@ def build_resume_markdown(result: dict, position_name: str = "") -> str:
     else:
         lines.append("- 当前事实不足，请先补充真实经历后再生成简历。")
 
+    lines.extend(
+        [
+            "",
+            "## 教育背景",
+            "学校 / 专业 / 学历：请补充",
+            "时间：请补充",
+            "相关课程、证书或毕业设计：请补充",
+            "",
+            "## 技能与工具",
+            "- 请补充真实掌握的工具、语言、平台或证书。",
+        ]
+    )
+
     unknowns = result.get("unknowns", [])
     if unknowns:
         lines.extend(["", "## 投递前待确认"])
@@ -191,8 +223,39 @@ def build_resume_markdown(result: dict, position_name: str = "") -> str:
         [
             "",
             "## 使用说明",
-            "请把姓名、电话、邮箱、教育经历等个人信息补到页首后再投递。",
+            "复制到简历后，请先补齐个人信息、教育背景和技能工具，再按真实情况删改。",
             "所有数据和职责应以真实经历为准，不能把课程项目写成企业项目。",
+        ]
+    )
+    return "\n".join(lines).strip()
+
+
+def build_base_resume_markdown(result: dict) -> str:
+    lines = [
+        "# 基础简历模板",
+        "",
+        "姓名：请补充    手机：请补充    邮箱：请补充    城市：请补充",
+    ]
+    title_map = {
+        "教育背景": "教育背景",
+        "实习、兼职或实践经历": "实践经历",
+        "课程、个人或作品项目": "项目经历",
+        "技能、工具与证书": "技能与证书",
+        "可迁移技能": "可迁移能力",
+    }
+    for section in result.get("sections", []):
+        title = title_map.get(section.get("title", ""), section.get("title", "经历"))
+        content = clean_text(section.get("content"))
+        if not content:
+            continue
+        lines.extend(["", f"## {title}", content])
+    lines.extend(
+        [
+            "",
+            "## 简历润色提醒",
+            f"- 责任程度先按“{result.get('responsibility', '参与')}”记录，不夸大主导权。",
+            "- 每段经历后续最好补充：任务、动作、工具、交付物、可验证结果。",
+            "- 投递前再按具体岗位删除无关内容，保留最能证明匹配度的 3 到 5 条。",
         ]
     )
     return "\n".join(lines).strip()
@@ -587,14 +650,20 @@ def render_target_result() -> None:
 
     markdown = report_markdown(result)
     resume_markdown = build_resume_markdown(result, position_name)
+    resume_text = markdown_to_plain_text(resume_markdown)
     st.subheader("9. 下载材料")
     with st.container(border=True):
-        st.markdown("#### 简历预览")
-        st.caption("下载的 Word 会按这个结构排版；页首个人信息请在 Word 里补齐后再投递。")
-        st.markdown(resume_markdown)
+        st.markdown("#### 可复制简历正文")
+        st.caption("这里是可以直接粘到简历里的文本；方括号和“请补充”内容投递前需要替换。")
+        st.text_area(
+            "复制这份定制简历文本",
+            value=resume_text,
+            height=420,
+            key="target_resume_copy_text",
+        )
         with st.container(horizontal=True, horizontal_alignment="distribute"):
             st.download_button(
-                "下载定制简历（Word）",
+                "下载有内容的简历模板（Word）",
                 build_word_document(resume_markdown, "岗位定制简历"),
                 file_name="岗位定制简历.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -681,16 +750,18 @@ def render_base_flow() -> None:
                 st.session_state.error = str(exc)
     else:
         result = st.session_state.base_result
+        base_markdown = build_base_resume_markdown(result)
+        base_text = markdown_to_plain_text(base_markdown)
         st.success(result["notice"], icon=":material/verified:")
         st.text_area(
-            "可复制的基础简历",
-            value=result["plain_text"],
+            "可复制的基础简历模板",
+            value=base_text,
             height=480,
             key="base_resume_preview",
         )
         st.download_button(
-            "下载基础简历（Word）",
-            build_word_document(result["plain_text"], "基础简历"),
+            "下载有内容的基础简历模板（Word）",
+            build_word_document(base_markdown, "基础简历"),
             file_name="基础简历.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             icon=":material/download:",
