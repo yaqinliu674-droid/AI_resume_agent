@@ -250,6 +250,18 @@ class StreamlitSmokeTests(unittest.TestCase):
             ["开始岗位定制", "探索岗位方向", "整理基础简历"],
         )
 
+    def test_target_sample_button_prefills_test_copy(self):
+        os.environ["AI_RESUME_OFFLINE"] = "1"
+        from streamlit.testing.v1 import AppTest
+
+        app = AppTest.from_file("app.py", default_timeout=15).run()
+        app.button(key="landing_target").click().run()
+        app.button(key="fill_target_sample").click().run()
+        self.assertFalse(app.exception)
+        self.assertIn("新媒体运营助理", app.text_input(key="target_position").value)
+        self.assertIn("微信公众号", app.text_area(key="target_jd").value)
+        self.assertIn("8 篇内容", app.text_area(key="target_resume_input").value)
+
     def test_target_ui_can_finish_after_skipping_all_questions(self):
         os.environ["AI_RESUME_OFFLINE"] = "1"
         from streamlit.testing.v1 import AppTest
@@ -266,7 +278,7 @@ class StreamlitSmokeTests(unittest.TestCase):
             "Campus account: participated in planning, layout and publishing; "
             "completed 8 posts and used Excel to organize reading data."
         )
-        app.button[1].click().run()
+        app.button(key="submit_target_input").click().run()
         self.assertFalse(app.exception)
         self.assertEqual(len(app.radio), 3)
         app.button(key="skip_all_target_questions").click().run()
@@ -274,7 +286,7 @@ class StreamlitSmokeTests(unittest.TestCase):
         headings = [item.value for item in app.subheader]
         self.assertIn("1. 岗位匹配结论", headings)
         self.assertIn("8. 面试官可能追问", headings)
-        self.assertIn("9. 可复制简历结果", headings)
+        self.assertIn("可复制简历结果", headings)
         self.assertEqual(len(app.get("download_button")), 0)
         resume_sections = [
             area.value for area in app.text_area if area.key.startswith("target_resume_section")
@@ -292,7 +304,7 @@ class StreamlitSmokeTests(unittest.TestCase):
         app.text_area(key="base_projects").input(
             "Course project: completed a content research report."
         )
-        app.button[1].click().run()
+        app.button(key="submit_base_resume").click().run()
         self.assertFalse(app.exception)
         app.button(key="base_to_target").click().run()
         self.assertFalse(app.exception)
@@ -308,7 +320,7 @@ class StreamlitSmokeTests(unittest.TestCase):
         app.text_area(key="direction_experience").input(
             "Unity course project: worked on UI, testing and asset organization."
         )
-        app.button[1].click().run()
+        app.button(key="submit_direction_form").click().run()
         self.assertFalse(app.exception)
         markdown = [item.value for item in app.markdown]
         self.assertIn(":blue-badge[直接可投]", markdown)
