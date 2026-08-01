@@ -1,4 +1,5 @@
 import os
+from html import escape
 
 import streamlit as st
 from dotenv import load_dotenv
@@ -27,17 +28,30 @@ def apply_custom_styles() -> None:
     st.html(
         """
         <style>
+        :root {
+            --brand-ink: #172033;
+            --brand-muted: #5b667a;
+            --brand-line: rgba(23, 32, 51, 0.10);
+            --brand-surface: rgba(255, 255, 255, 0.88);
+            --brand-primary: #334155;
+            --brand-accent: #0f766e;
+            --brand-warm: #a16207;
+        }
         [data-testid="stAppViewContainer"] {
             background:
-                radial-gradient(circle at top left, rgba(37, 99, 235, 0.10), transparent 34rem),
-                linear-gradient(180deg, #f8fafc 0%, #ffffff 44%);
+                radial-gradient(circle at 18% 0%, rgba(15, 118, 110, 0.10), transparent 30rem),
+                radial-gradient(circle at 88% 12%, rgba(161, 98, 7, 0.08), transparent 26rem),
+                linear-gradient(180deg, #fbfaf7 0%, #f7f8f6 48%, #ffffff 100%);
         }
         [data-testid="stMainBlockContainer"] {
             padding-top: 2.5rem;
+            max-width: 980px;
         }
         [data-testid="stBaseButton-primary"] button {
             border-radius: 999px;
             font-weight: 700;
+            background: #172033;
+            border: 1px solid #172033;
         }
         [data-testid="stBaseButton-secondary"] button,
         [data-testid="stFormSubmitButton"] button {
@@ -47,12 +61,89 @@ def apply_custom_styles() -> None:
         [data-testid="stTextArea"] textarea,
         [data-testid="stTextInput"] input {
             border-radius: 14px;
+            border-color: rgba(23, 32, 51, 0.16);
+            background: rgba(255, 255, 255, 0.92);
         }
         [data-testid="stVerticalBlockBorderWrapper"] {
-            border-radius: 20px;
-            border-color: rgba(15, 23, 42, 0.10);
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
-            background: rgba(255, 255, 255, 0.72);
+            border-radius: 22px;
+            border-color: var(--brand-line);
+            box-shadow: 0 18px 48px rgba(23, 32, 51, 0.06);
+            background: var(--brand-surface);
+        }
+        h1, h2, h3 {
+            letter-spacing: -0.035em;
+            color: var(--brand-ink);
+        }
+        p, li, label, [data-testid="stCaptionContainer"] {
+            color: var(--brand-muted);
+        }
+        .product-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.36rem 0.72rem;
+            border: 1px solid rgba(15, 118, 110, 0.18);
+            border-radius: 999px;
+            color: #0f766e;
+            background: rgba(240, 253, 250, 0.82);
+            font-size: 0.86rem;
+            font-weight: 700;
+            margin-bottom: 0.85rem;
+        }
+        .hero-title {
+            font-size: clamp(2.35rem, 5.6vw, 4.8rem);
+            line-height: 0.98;
+            letter-spacing: -0.07em;
+            font-weight: 860;
+            color: #121826;
+            margin: 0 0 1rem 0;
+        }
+        .hero-copy {
+            color: #475569;
+            font-size: 1.12rem;
+            line-height: 1.75;
+            max-width: 44rem;
+            margin-bottom: 1.25rem;
+        }
+        .trust-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.7rem;
+            margin: 1rem 0 1.3rem 0;
+        }
+        .trust-pill {
+            border: 1px solid rgba(23, 32, 51, 0.10);
+            border-radius: 999px;
+            padding: 0.42rem 0.72rem;
+            background: rgba(255,255,255,0.76);
+            color: #334155;
+            font-size: 0.88rem;
+            font-weight: 650;
+        }
+        .route-meta {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-top: -0.25rem;
+        }
+        .metric-label {
+            color: #64748b;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .metric-value {
+            color: #172033;
+            font-size: 1.2rem;
+            font-weight: 820;
+            margin-top: 0.25rem;
+        }
+        .section-note {
+            border-left: 3px solid #0f766e;
+            padding: 0.72rem 0.9rem;
+            background: rgba(240, 253, 250, 0.64);
+            border-radius: 0 14px 14px 0;
+            color: #334155;
         }
         </style>
         """
@@ -79,6 +170,27 @@ def get_analyzer() -> CareerAnalyzer:
             offline=get_setting("AI_RESUME_OFFLINE") == "1",
         )
     )
+
+
+def render_metric_card(label: str, value: str, note: str = "") -> None:
+    with st.container(border=True):
+        safe_label = escape(label)
+        safe_value = escape(value)
+        safe_note = escape(note)
+        st.html(
+            f"""
+            <div class="metric-label">{safe_label}</div>
+            <div class="metric-value">{safe_value}</div>
+            <div class="route-meta">{safe_note}</div>
+            """
+        )
+
+
+def render_page_intro(title: str, subtitle: str, kicker: str = "") -> None:
+    if kicker:
+        st.html(f'<div class="product-kicker">{kicker}</div>')
+    st.title(title)
+    st.markdown(subtitle)
 
 
 def initialize_state() -> None:
@@ -278,24 +390,74 @@ def render_resume_sections(
             )
 
 
+def render_target_snapshot(result: dict) -> None:
+    risks = result.get("risks", [])[:3]
+    strengths = result.get("strengths", [])[:3]
+    unknowns = result.get("unknowns", [])[:3]
+    confidence = clean_text(result.get("confidence", "低")) or "低"
+    hard_requirements = clean_text(result.get("hard_requirements", "仍需核对"))
+    next_step = unknowns[0] if unknowns else "复制下方简历板块，投递前再核对联系方式、时间和数据。"
+
+    st.subheader("投递判断")
+    st.html('<div class="section-note">先看结论，再复制简历正文。分析细节收在下方，避免干扰使用。</div>')
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        render_metric_card("匹配可信度", confidence, "基于 JD 与已填写经历")
+    with col2:
+        render_metric_card("硬性条件", hard_requirements, "有门槛先核对门槛")
+    with col3:
+        render_metric_card("下一步", "补齐关键事实", next_step)
+
+    left, right = st.columns(2)
+    with left:
+        with st.container(border=True):
+            st.markdown("#### 已有优势")
+            if strengths:
+                for item in strengths:
+                    st.markdown(f"- {item}")
+            else:
+                st.caption("当前经历证据较少，建议先补充项目、职责、工具和交付结果。")
+    with right:
+        with st.container(border=True):
+            st.markdown("#### 主要风险")
+            if risks:
+                for item in risks:
+                    st.markdown(f"- {item}")
+            else:
+                st.caption("暂未发现明显风险；投递前仍需核对岗位硬性条件。")
+
+
 def render_landing() -> None:
-    st.title("AI 求职助手")
-    st.markdown(
-        "把岗位 JD、真实经历和零散项目整理成可复制到 Word 的简历内容。"
-        "当前版本优先保证信息真实、结构清楚、方便测试。"
+    st.html(
+        """
+        <div class="product-kicker">面向真实投递的 AI 简历工作台</div>
+        <div class="hero-title">把零散经历整理成<br/>能投递的简历证据。</div>
+        <div class="hero-copy">
+        针对真实岗位 JD 拆解要求、核对经历证据、生成可复制到 Word 的简历板块。
+        它不会替你编造经历，而是帮你把已经做过的事表达得更清楚。
+        </div>
+        <div class="trust-row">
+            <div class="trust-pill">不导出乱码文件</div>
+            <div class="trust-pill">不编造数据和职责</div>
+            <div class="trust-pill">支持跳过追问</div>
+            <div class="trust-pill">内置测试样例</div>
+        </div>
+        """
     )
 
     with st.container(border=True):
-        st.badge("推荐入口", icon=":material/bolt:", color="blue")
+        st.badge("建议先从这里开始", icon=":material/bolt:", color="green")
         st.markdown("### 我有目标岗位，准备投递")
-        st.caption("输入岗位 JD 和真实经历，先判断匹配度，再生成按板块可复制的定制简历。")
-        col_a, col_b = st.columns(2)
-        with col_a:
-            st.markdown(":material/check_circle: 适合已经有招聘链接或 JD")
-            st.markdown(":material/check_circle: 输出姓名 / 教育 / 经历 / 技能板块")
-        with col_b:
-            st.markdown(":material/check_circle: 支持跳过补充问题")
-            st.markdown(":material/check_circle: 内置测试样例，方便反复验证")
+        st.markdown(
+            "把 **岗位 JD + 真实经历** 放进去，系统会先判断匹配情况，再输出按姓名、教育、经历、技能分好的简历文本。"
+        )
+        a, b, c = st.columns(3)
+        with a:
+            render_metric_card("输入", "JD + 经历", "也可上传简历文件")
+        with b:
+            render_metric_card("过程", "诊断 + 追问", "最多 3 个关键问题")
+        with c:
+            render_metric_card("输出", "可复制简历", "直接粘贴到 Word")
         st.button(
             "开始岗位定制",
             icon=":material/arrow_forward:",
@@ -309,8 +471,8 @@ def render_landing() -> None:
     col1, col2 = st.columns(2)
     with col1:
         with st.container(border=True):
-            st.markdown("### 探索岗位方向")
-            st.caption("方向不确定时，输入经历，先得到直接可投、相邻方向和探索方向。")
+            st.markdown("### 还没确定投什么")
+            st.caption("输入经历和限制条件，先缩小到直接可投、相邻方向和探索方向。")
             st.button(
                 "探索岗位方向",
                 icon=":material/explore:",
@@ -321,8 +483,8 @@ def render_landing() -> None:
             )
     with col2:
         with st.container(border=True):
-            st.markdown("### 整理基础简历")
-            st.caption("没有完整简历时，把课程、项目、社团和技能整理成基础模板。")
+            st.markdown("### 简历还很零散")
+            st.caption("把课程、项目、社团、兼职和技能整理成一份基础简历骨架。")
             st.button(
                 "整理基础简历",
                 icon=":material/article:",
@@ -331,6 +493,8 @@ def render_landing() -> None:
                 args=("base",),
                 key="landing_base",
             )
+
+    st.caption("适合内测：应届生、转行、经历零散、需要根据具体 JD 修改简历的用户。")
 
 
 def render_diagnosis(diagnosis: dict) -> None:
@@ -399,22 +563,23 @@ def finalize_target(answers: list[dict[str, str]]) -> None:
 
 
 def render_target_flow() -> None:
-    st.title("岗位定制")
-    st.caption("已有明确目标岗位的用户只走这条流程，不需要填写职业偏好或城市问卷。")
+    render_page_intro(
+        "岗位定制",
+        "粘贴真实 JD 和经历后，系统会先做岗位诊断，再输出适合复制到 Word 的简历正文。",
+        "推荐路径 · 适合已经有目标岗位",
+    )
 
     if st.session_state.target_stage == "input":
-        st.info(
-            "建议上传前隐藏身份证号、完整住址等非必要敏感信息。"
-            "测试版本不应长期保存简历正文。",
-            icon=":material/privacy_tip:",
-        )
-        st.button(
-            "一键填入测试样例",
-            icon=":material/content_paste:",
-            width="stretch",
-            on_click=fill_target_sample,
-            key="fill_target_sample",
-        )
+        with st.container(border=True):
+            st.markdown("#### 开始前准备")
+            st.caption("建议上传前隐藏身份证号、完整住址等非必要敏感信息。测试时可直接使用样例。")
+            st.button(
+                "一键填入测试样例",
+                icon=":material/content_paste:",
+                width="stretch",
+                on_click=fill_target_sample,
+                key="fill_target_sample",
+            )
         with st.form("target_input_form"):
             position = st.text_input(
                 "目标岗位名称",
@@ -552,6 +717,8 @@ def render_target_result() -> None:
     if st.session_state.notice:
         st.warning(st.session_state.notice, icon=":material/verified_user:")
 
+    render_target_snapshot(result)
+
     resume_sections = build_target_resume_sections(result, position_name)
     st.subheader("可复制简历结果")
     with st.container(border=True):
@@ -663,16 +830,22 @@ def render_target_result() -> None:
 
 
 def render_base_flow() -> None:
-    st.title("整理基础简历")
-    st.caption("没有正式工作经历也可以填写课程、个人项目、比赛、社团、兼职、作品和长期负责的事务。")
+    render_page_intro(
+        "整理基础简历",
+        "把课程、项目、实习、兼职、社团和技能整理成一份真实可用的简历骨架。",
+        "基础路径 · 适合经历零散时先整理",
+    )
     if not st.session_state.base_result:
-        st.button(
-            "一键填入测试样例",
-            icon=":material/content_paste:",
-            width="stretch",
-            on_click=fill_base_sample,
-            key="fill_base_sample",
-        )
+        with st.container(border=True):
+            st.markdown("#### 填写原则")
+            st.caption("先保留真实标签：课程项目就写课程项目，参与就写参与。后续再按目标岗位删减。")
+            st.button(
+                "一键填入测试样例",
+                icon=":material/content_paste:",
+                width="stretch",
+                on_click=fill_base_sample,
+                key="fill_base_sample",
+            )
         with st.form("base_resume_form"):
             education = st.text_area(
                 "教育背景",
@@ -740,6 +913,7 @@ def render_base_flow() -> None:
     else:
         result = st.session_state.base_result
         st.success(result["notice"], icon=":material/verified:")
+        st.subheader("可复制基础简历")
         render_resume_sections(
             build_base_resume_sections(result),
             "base_resume_section",
@@ -766,16 +940,22 @@ def render_base_flow() -> None:
 
 
 def render_direction_flow() -> None:
-    st.title("探索岗位方向")
-    st.caption("第一轮只判断 3 件必要的事。过去经历只作为证据，不替你决定未来。")
+    render_page_intro(
+        "探索岗位方向",
+        "当你还不确定投什么岗位时，先用已有经历缩小方向，再决定是否要针对具体 JD 定制简历。",
+        "探索路径 · 适合转向或方向不清",
+    )
     if not st.session_state.direction_result:
-        st.button(
-            "一键填入测试样例",
-            icon=":material/content_paste:",
-            width="stretch",
-            on_click=fill_direction_sample,
-            key="fill_direction_sample",
-        )
+        with st.container(border=True):
+            st.markdown("#### 先做方向筛选")
+            st.caption("这里不会替你决定职业，只会根据已填写证据给出低成本验证路径。")
+            st.button(
+                "一键填入测试样例",
+                icon=":material/content_paste:",
+                width="stretch",
+                on_click=fill_direction_sample,
+                key="fill_direction_sample",
+            )
         with st.form("direction_form"):
             experience = st.text_area(
                 "先写下真实经历或基础简历",
@@ -843,7 +1023,17 @@ def render_direction_flow() -> None:
             st.warning(result.get("notice", ""), icon=":material/info:")
         else:
             st.caption(result.get("notice", ""))
-        for role_index, role in enumerate(result.get("roles", [])[:3]):
+        roles = result.get("roles", [])[:3]
+        st.subheader("方向判断")
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            render_metric_card("直接可投", roles[0].get("title", "待验证") if roles else "待验证", "先找真实 JD 核对")
+        with c2:
+            render_metric_card("相邻方向", roles[1].get("title", "待验证") if len(roles) > 1 else "待验证", "能力迁移成本较低")
+        with c3:
+            render_metric_card("探索方向", roles[2].get("title", "待验证") if len(roles) > 2 else "待验证", "先做微型项目验证")
+        st.subheader("推荐路径")
+        for role_index, role in enumerate(roles):
             with st.container(border=True):
                 st.badge(role.get("category", "探索方向"), color="blue")
                 st.subheader(role.get("title", "待验证方向"))
@@ -901,25 +1091,26 @@ if st.session_state.view == "landing":
     render_landing()
     st.stop()
 
-st.button(
-    "返回首页",
-    icon=":material/arrow_back:",
-    width="stretch",
-    on_click=go_home,
-    key="global_back_home",
-)
-if (
-    st.session_state.target_result
-    or st.session_state.direction_result
-    or st.session_state.base_result
-):
+with st.container(horizontal=True, horizontal_alignment="distribute"):
     st.button(
-        "开始新的分析",
-        icon=":material/restart_alt:",
-        width="stretch",
-        on_click=start_over,
-        key="global_start_over",
+        "返回首页",
+        icon=":material/arrow_back:",
+        width="content",
+        on_click=go_home,
+        key="global_back_home",
     )
+    if (
+        st.session_state.target_result
+        or st.session_state.direction_result
+        or st.session_state.base_result
+    ):
+        st.button(
+            "开始新的分析",
+            icon=":material/restart_alt:",
+            width="content",
+            on_click=start_over,
+            key="global_start_over",
+        )
 
 journey = st.session_state.journey
 if journey == "target":
