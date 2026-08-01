@@ -23,6 +23,42 @@ st.set_page_config(
 )
 
 
+def apply_custom_styles() -> None:
+    st.html(
+        """
+        <style>
+        [data-testid="stAppViewContainer"] {
+            background:
+                radial-gradient(circle at top left, rgba(37, 99, 235, 0.10), transparent 34rem),
+                linear-gradient(180deg, #f8fafc 0%, #ffffff 44%);
+        }
+        [data-testid="stMainBlockContainer"] {
+            padding-top: 2.5rem;
+        }
+        [data-testid="stBaseButton-primary"] button {
+            border-radius: 999px;
+            font-weight: 700;
+        }
+        [data-testid="stBaseButton-secondary"] button,
+        [data-testid="stFormSubmitButton"] button {
+            border-radius: 999px;
+            font-weight: 650;
+        }
+        [data-testid="stTextArea"] textarea,
+        [data-testid="stTextInput"] input {
+            border-radius: 14px;
+        }
+        [data-testid="stVerticalBlockBorderWrapper"] {
+            border-radius: 20px;
+            border-color: rgba(15, 23, 42, 0.10);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+            background: rgba(255, 255, 255, 0.72);
+        }
+        </style>
+        """
+    )
+
+
 def get_setting(name: str, default: str = "") -> str:
     local = os.getenv(name)
     if local:
@@ -81,6 +117,40 @@ def clear_outputs() -> None:
         "hide_city_advice": False,
     }.items():
         st.session_state[key] = value
+
+
+def fill_target_sample() -> None:
+    st.session_state.target_position = "新媒体运营助理"
+    st.session_state.target_jd = (
+        "负责微信公众号、小红书等平台的内容选题、文案撰写、排版发布和基础数据复盘；"
+        "参与活动执行、用户沟通和素材整理，能够使用 Excel 或内容后台跟踪阅读量、互动率和转化表现；"
+        "要求具备内容策划、文字表达、跨部门协作、执行力和基础数据分析能力。"
+    )
+    st.session_state.target_resume_input = (
+        "校园公众号运营：参与选题策划、图文排版和发布，累计完成 8 篇内容；"
+        "使用 Excel 记录阅读量、点赞、收藏等互动数据，协助复盘内容表现。\n\n"
+        "课程项目：完成用户调研报告和竞品分析，负责资料收集、访谈纪要整理、结论汇总和课堂展示。"
+    )
+
+
+def fill_base_sample() -> None:
+    st.session_state.base_education = "新闻传播专业，本科，2025 届。相关课程：新媒体运营、用户研究、数据分析基础。"
+    st.session_state.base_experience = (
+        "校园公众号运营：参与选题策划、图文排版和发布，累计完成 8 篇内容；"
+        "使用 Excel 记录阅读量、点赞、收藏等互动数据，协助复盘内容表现。"
+    )
+    st.session_state.base_projects = (
+        "课程项目：完成用户调研报告和竞品分析，负责资料收集、访谈纪要整理、结论汇总和课堂展示。"
+    )
+    st.session_state.base_skills = "Excel、公众号后台、基础文案写作、资料整理、用户访谈记录。"
+    st.session_state.base_transferable = "内容整理、数据记录、沟通协作、执行落地。"
+
+
+def fill_direction_sample() -> None:
+    st.session_state.direction_experience = (
+        "新闻传播专业。做过校园公众号运营，参与选题、排版、发布和数据记录；"
+        "做过用户调研课程项目，负责资料收集、访谈纪要和竞品分析。"
+    )
 
 
 def enter_journey(journey: str) -> None:
@@ -210,17 +280,22 @@ def render_resume_sections(
 
 def render_landing() -> None:
     st.title("AI 求职助手")
-    st.caption("先看清岗位，再整理证据，最后生成可解释、可复核的求职材料。")
-    st.subheader("你现在最需要完成哪件事？")
-    st.caption("首页只有三个入口。选择最接近你当前情况的一项即可。")
+    st.markdown(
+        "把岗位 JD、真实经历和零散项目整理成可复制到 Word 的简历内容。"
+        "当前版本优先保证信息真实、结构清楚、方便测试。"
+    )
 
     with st.container(border=True):
-        st.badge("有 JD 直接选这里", icon=":material/bolt:", color="blue")
-        st.markdown("#### :material/target: 我有目标岗位，准备投递")
-        st.caption(
-            "已有岗位名称或招聘要求，直接分析匹配情况并生成定制简历，不需要填写职业偏好问卷。"
-        )
-        st.markdown("适合：已有真实 JD、已知道岗位名称、当前要修改简历并准备投递。")
+        st.badge("推荐入口", icon=":material/bolt:", color="blue")
+        st.markdown("### 我有目标岗位，准备投递")
+        st.caption("输入岗位 JD 和真实经历，先判断匹配度，再生成按板块可复制的定制简历。")
+        col_a, col_b = st.columns(2)
+        with col_a:
+            st.markdown(":material/check_circle: 适合已经有招聘链接或 JD")
+            st.markdown(":material/check_circle: 输出姓名 / 教育 / 经历 / 技能板块")
+        with col_b:
+            st.markdown(":material/check_circle: 支持跳过补充问题")
+            st.markdown(":material/check_circle: 内置测试样例，方便反复验证")
         st.button(
             "开始岗位定制",
             icon=":material/arrow_forward:",
@@ -231,35 +306,31 @@ def render_landing() -> None:
             key="landing_target",
         )
 
-    with st.container(border=True):
-        st.markdown("#### :material/explore: 我还没确定投什么岗位")
-        st.caption(
-            "结合你的经历、工作偏好和城市考虑，梳理可以直接尝试、相邻转向和继续探索的职业方向。"
-        )
-        st.markdown("适合：方向不清、想转行、有几个方向难选择，或需要城市参考。")
-        st.button(
-            "探索岗位方向",
-            icon=":material/arrow_forward:",
-            width="stretch",
-            on_click=enter_journey,
-            args=("direction",),
-            key="landing_direction",
-        )
-
-    with st.container(border=True):
-        st.markdown("#### :material/article: 我想先整理一份基础简历")
-        st.caption(
-            "没有完整简历也没关系，从课程、项目、实习、兼职和作品中整理出一份真实可用的基础版本。"
-        )
-        st.markdown("适合：没有完整简历、经历比较零散，或想先把真实经历整理清楚。")
-        st.button(
-            "整理基础简历",
-            icon=":material/arrow_forward:",
-            width="stretch",
-            on_click=enter_journey,
-            args=("base",),
-            key="landing_base",
-        )
+    col1, col2 = st.columns(2)
+    with col1:
+        with st.container(border=True):
+            st.markdown("### 探索岗位方向")
+            st.caption("方向不确定时，输入经历，先得到直接可投、相邻方向和探索方向。")
+            st.button(
+                "探索岗位方向",
+                icon=":material/explore:",
+                width="stretch",
+                on_click=enter_journey,
+                args=("direction",),
+                key="landing_direction",
+            )
+    with col2:
+        with st.container(border=True):
+            st.markdown("### 整理基础简历")
+            st.caption("没有完整简历时，把课程、项目、社团和技能整理成基础模板。")
+            st.button(
+                "整理基础简历",
+                icon=":material/article:",
+                width="stretch",
+                on_click=enter_journey,
+                args=("base",),
+                key="landing_base",
+            )
 
 
 def render_diagnosis(diagnosis: dict) -> None:
@@ -337,6 +408,13 @@ def render_target_flow() -> None:
             "测试版本不应长期保存简历正文。",
             icon=":material/privacy_tip:",
         )
+        st.button(
+            "一键填入测试样例",
+            icon=":material/content_paste:",
+            width="stretch",
+            on_click=fill_target_sample,
+            key="fill_target_sample",
+        )
         with st.form("target_input_form"):
             position = st.text_input(
                 "目标岗位名称",
@@ -369,6 +447,7 @@ def render_target_flow() -> None:
                 icon=":material/analytics:",
                 type="primary",
                 width="stretch",
+                key="submit_target_input",
             )
 
         if submitted:
@@ -473,107 +552,8 @@ def render_target_result() -> None:
     if st.session_state.notice:
         st.warning(st.session_state.notice, icon=":material/verified_user:")
 
-    st.subheader("1. 岗位匹配结论")
-    with st.container(border=True):
-        st.markdown(result.get("match_conclusion", "当前信息不足，暂时无法形成可靠结论。"))
-        st.markdown(f"**硬性条件：** {result.get('hard_requirements', '仍需核对')}")
-        st.markdown(f"**结论可信度：** {result.get('confidence', '低')}")
-
-    st.subheader("2. 招聘方真正看重什么")
-    for item in result.get("requirements", []):
-        with st.container(border=True):
-            st.markdown(item)
-
-    st.subheader("3. 最可能影响初筛的 3 个风险")
-    for item in result.get("risks", [])[:3]:
-        st.warning(item, icon=":material/warning:")
-
-    st.subheader("4. 你已有的真实优势")
-    for item in result.get("strengths", []):
-        st.success(item, icon=":material/check_circle:")
-
-    st.subheader("5. 修改前后对照")
-    before_after = result.get("before_after", [])
-    if before_after:
-        for item in before_after:
-            with st.container(border=True):
-                st.caption(f"原文：{item.get('before', '未提供')}")
-                st.markdown(f"**改写：{item.get('after', '')}**")
-                st.caption(f"依据：{item.get('basis', '已确认事实')}")
-    else:
-        st.caption("保守版本没有强行改写原文；补充真实责任和交付后可生成更清晰的对照。")
-
-    st.subheader("6. 修改后的定制简历")
-    bullets = result.get("resume_bullets", [])
-    for index, item in enumerate(bullets):
-        with st.container(border=True):
-            st.markdown(f"**{item.get('text', '')}**")
-            st.caption(f"事实状态：{item.get('fact_status', '已确认事实')}")
-            with st.popover("纠正这一条", icon=":material/edit:"):
-                correction = st.selectbox(
-                    "选择纠正方式",
-                    [
-                        "这不是我负责的",
-                        "数据不准确",
-                        "表达太夸张",
-                        "表达太笼统",
-                        "不像我的说话方式",
-                        "保留原文",
-                        "重新改写这一条",
-                    ],
-                    key=f"correction_type_{index}",
-                )
-                detail = st.text_input(
-                    "补充说明（选填）",
-                    key=f"correction_detail_{index}",
-                    placeholder="只写需要更正的真实情况。",
-                )
-                if st.button(
-                    "只更新这一条",
-                    key=f"apply_correction_{index}",
-                    type="primary",
-                    width="stretch",
-                ):
-                    facts = st.session_state.target_context["resume"] + "\n" + "\n".join(
-                        answer.get("answer", "")
-                        for answer in st.session_state.target_answers
-                    )
-                    feedback = "；".join(part for part in (correction, detail) if part)
-                    revised = get_analyzer().revise(facts, item.get("text", ""), feedback)
-                    st.session_state.target_result["resume_bullets"][index]["text"] = revised[
-                        "replacement"
-                    ]
-                    st.session_state.target_result["resume_bullets"][index][
-                        "fact_status"
-                    ] = revised["status"]
-                    st.session_state.notice = revised["basis"]
-                    st.rerun()
-
-    review = result.get("review", {})
-    with st.container(border=True):
-        st.markdown("#### 独立真实性复核")
-        st.badge(
-            review.get("status", "已复核"),
-            icon=":material/verified:",
-            color="green",
-        )
-        for note in review.get("notes", []):
-            st.markdown(f"- {note}")
-        rejected = review.get("rejected_claims", [])
-        if rejected:
-            st.caption(f"已拦截 {len(rejected)} 条缺少事实支撑的表述。")
-
-    st.subheader("7. 仍需确认的信息")
-    for item in result.get("unknowns", []):
-        st.info(item, icon=":material/help:")
-
-    st.subheader("8. 面试官可能追问")
-    for index, item in enumerate(result.get("interview_questions", []), start=1):
-        with st.container(border=True):
-            st.markdown(f"**{index}. {item}**")
-
     resume_sections = build_target_resume_sections(result, position_name)
-    st.subheader("9. 可复制简历结果")
+    st.subheader("可复制简历结果")
     with st.container(border=True):
         render_resume_sections(
             resume_sections,
@@ -581,11 +561,118 @@ def render_target_result() -> None:
             "按板块选中复制到 Word。每个文本框只放普通文本，不再导出文件。",
         )
 
+    with st.expander("查看分析依据、风险和面试追问", icon=":material/analytics:"):
+        st.subheader("1. 岗位匹配结论")
+        with st.container(border=True):
+            st.markdown(result.get("match_conclusion", "当前信息不足，暂时无法形成可靠结论。"))
+            st.markdown(f"**硬性条件：** {result.get('hard_requirements', '仍需核对')}")
+            st.markdown(f"**结论可信度：** {result.get('confidence', '低')}")
+
+        st.subheader("2. 招聘方真正看重什么")
+        for item in result.get("requirements", []):
+            with st.container(border=True):
+                st.markdown(item)
+
+        st.subheader("3. 最可能影响初筛的 3 个风险")
+        for item in result.get("risks", [])[:3]:
+            st.warning(item, icon=":material/warning:")
+
+        st.subheader("4. 你已有的真实优势")
+        for item in result.get("strengths", []):
+            st.success(item, icon=":material/check_circle:")
+
+        st.subheader("5. 修改前后对照")
+        before_after = result.get("before_after", [])
+        if before_after:
+            for item in before_after:
+                with st.container(border=True):
+                    st.caption(f"原文：{item.get('before', '未提供')}")
+                    st.markdown(f"**改写：{item.get('after', '')}**")
+                    st.caption(f"依据：{item.get('basis', '已确认事实')}")
+        else:
+            st.caption("保守版本没有强行改写原文；补充真实责任和交付后可生成更清晰的对照。")
+
+        st.subheader("6. 逐条修改建议")
+        bullets = result.get("resume_bullets", [])
+        for index, item in enumerate(bullets):
+            with st.container(border=True):
+                st.markdown(f"**{item.get('text', '')}**")
+                st.caption(f"事实状态：{item.get('fact_status', '已确认事实')}")
+                with st.popover("纠正这一条", icon=":material/edit:"):
+                    correction = st.selectbox(
+                        "选择纠正方式",
+                        [
+                            "这不是我负责的",
+                            "数据不准确",
+                            "表达太夸张",
+                            "表达太笼统",
+                            "不像我的说话方式",
+                            "保留原文",
+                            "重新改写这一条",
+                        ],
+                        key=f"correction_type_{index}",
+                    )
+                    detail = st.text_input(
+                        "补充说明（选填）",
+                        key=f"correction_detail_{index}",
+                        placeholder="只写需要更正的真实情况。",
+                    )
+                    if st.button(
+                        "只更新这一条",
+                        key=f"apply_correction_{index}",
+                        type="primary",
+                        width="stretch",
+                    ):
+                        facts = st.session_state.target_context["resume"] + "\n" + "\n".join(
+                            answer.get("answer", "")
+                            for answer in st.session_state.target_answers
+                        )
+                        feedback = "；".join(part for part in (correction, detail) if part)
+                        revised = get_analyzer().revise(facts, item.get("text", ""), feedback)
+                        st.session_state.target_result["resume_bullets"][index]["text"] = revised[
+                            "replacement"
+                        ]
+                        st.session_state.target_result["resume_bullets"][index][
+                            "fact_status"
+                        ] = revised["status"]
+                        st.session_state.notice = revised["basis"]
+                        st.rerun()
+
+        review = result.get("review", {})
+        with st.container(border=True):
+            st.markdown("#### 独立真实性复核")
+            st.badge(
+                review.get("status", "已复核"),
+                icon=":material/verified:",
+                color="green",
+            )
+            for note in review.get("notes", []):
+                st.markdown(f"- {note}")
+            rejected = review.get("rejected_claims", [])
+            if rejected:
+                st.caption(f"已拦截 {len(rejected)} 条缺少事实支撑的表述。")
+
+        st.subheader("7. 仍需确认的信息")
+        for item in result.get("unknowns", []):
+            st.info(item, icon=":material/help:")
+
+        st.subheader("8. 面试官可能追问")
+        for index, item in enumerate(result.get("interview_questions", []), start=1):
+            with st.container(border=True):
+                st.markdown(f"**{index}. {item}**")
+
 
 def render_base_flow() -> None:
     st.title("整理基础简历")
     st.caption("没有正式工作经历也可以填写课程、个人项目、比赛、社团、兼职、作品和长期负责的事务。")
     if not st.session_state.base_result:
+        st.button(
+            "一键填入测试样例",
+            icon=":material/content_paste:",
+            width="stretch",
+            on_click=fill_base_sample,
+            key="fill_base_sample",
+        )
         with st.form("base_resume_form"):
             education = st.text_area(
                 "教育背景",
@@ -633,6 +720,7 @@ def render_base_flow() -> None:
                 icon=":material/article:",
                 type="primary",
                 width="stretch",
+                key="submit_base_resume",
             )
         if submitted:
             try:
@@ -681,6 +769,13 @@ def render_direction_flow() -> None:
     st.title("探索岗位方向")
     st.caption("第一轮只判断 3 件必要的事。过去经历只作为证据，不替你决定未来。")
     if not st.session_state.direction_result:
+        st.button(
+            "一键填入测试样例",
+            icon=":material/content_paste:",
+            width="stretch",
+            on_click=fill_direction_sample,
+            key="fill_direction_sample",
+        )
         with st.form("direction_form"):
             experience = st.text_area(
                 "先写下真实经历或基础简历",
@@ -723,6 +818,7 @@ def render_direction_flow() -> None:
                 icon=":material/explore:",
                 type="primary",
                 width="stretch",
+                key="submit_direction_form",
             )
         if submitted:
             excluded = "；".join(
@@ -798,6 +894,7 @@ def render_direction_flow() -> None:
         st.error(st.session_state.error, icon=":material/error:")
 
 
+apply_custom_styles()
 initialize_state()
 
 if st.session_state.view == "landing":
