@@ -1,13 +1,13 @@
 [theme]
 base = "light"
-primaryColor = "#4F46E5"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F5F7FB"
-textColor = "#182033"
-borderColor = "#D9E0EE"
-linkColor = "#4338CA"
-codeBackgroundColor = "#F5F7FB"
-codeTextColor = "#182033"
+primaryColor = "#172033"
+backgroundColor = "#FBFAF7"
+secondaryBackgroundColor = "#F4F1EA"
+textColor = "#172033"
+borderColor = "#D8D2C5"
+linkColor = "#0F766E"
+codeBackgroundColor = "#F4F1EA"
+codeTextColor = "#172033"
 font = "sans-serif"
 headingFont = "sans-serif"
 baseFontSize = 16
@@ -18,11 +18,11 @@ baseRadius = "medium"
 buttonRadius = "medium"
 showWidgetBorder = true
 
-blueColor = "#2563EB"
-violetColor = "#4F46E5"
-greenColor = "#15803D"
-orangeColor = "#B45309"
-redColor = "#C2413B"
+blueColor = "#334155"
+violetColor = "#57534E"
+greenColor = "#0F766E"
+orangeColor = "#A16207"
+redColor = "#B42318"
 grayColor = "#64748B"
 
 [client]
