@@ -249,6 +249,8 @@ class StreamlitSmokeTests(unittest.TestCase):
             labels,
             ["开始岗位定制", "探索岗位方向", "整理基础简历"],
         )
+        markdown = [item.value for item in app.markdown]
+        self.assertTrue(any("岗位 JD + 真实经历" in value for value in markdown))
 
     def test_target_sample_button_prefills_test_copy(self):
         os.environ["AI_RESUME_OFFLINE"] = "1"
@@ -284,6 +286,7 @@ class StreamlitSmokeTests(unittest.TestCase):
         app.button(key="skip_all_target_questions").click().run()
         self.assertFalse(app.exception)
         headings = [item.value for item in app.subheader]
+        self.assertIn("投递判断", headings)
         self.assertIn("1. 岗位匹配结论", headings)
         self.assertIn("8. 面试官可能追问", headings)
         self.assertIn("可复制简历结果", headings)
