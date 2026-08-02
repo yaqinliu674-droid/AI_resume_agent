@@ -145,6 +145,39 @@ def apply_custom_styles() -> None:
             border-radius: 0 14px 14px 0;
             color: #334155;
         }
+        .conversion-strip {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.75rem;
+            margin: 1.15rem 0 1.25rem 0;
+        }
+        .conversion-item {
+            border: 1px solid rgba(23, 32, 51, 0.10);
+            border-radius: 18px;
+            padding: 0.9rem;
+            background: rgba(255, 255, 255, 0.70);
+        }
+        .conversion-item b {
+            color: #172033;
+        }
+        .conversion-item span {
+            display: block;
+            color: #64748b;
+            font-size: 0.9rem;
+            line-height: 1.55;
+            margin-top: 0.25rem;
+        }
+        .cta-note {
+            color: #475569;
+            font-size: 0.95rem;
+            line-height: 1.65;
+            margin: 0.5rem 0 0.9rem 0;
+        }
+        @media (max-width: 760px) {
+            .conversion-strip {
+                grid-template-columns: 1fr;
+            }
+        }
         </style>
         """
     )
@@ -430,34 +463,46 @@ def render_target_snapshot(result: dict) -> None:
 def render_landing() -> None:
     st.html(
         """
-        <div class="product-kicker">面向真实投递的 AI 简历工作台</div>
-        <div class="hero-title">把零散经历整理成<br/>能投递的简历证据。</div>
+        <div class="product-kicker">给正在投简历的人用，不是泛泛润色工具</div>
+        <div class="hero-title">投递前，先知道<br/>这份简历该怎么改。</div>
         <div class="hero-copy">
-        针对真实岗位 JD 拆解要求、核对经历证据、生成可复制到 Word 的简历板块。
-        它不会替你编造经历，而是帮你把已经做过的事表达得更清楚。
+        大多数简历不是经历太少，而是没有对准岗位：JD 里真正看重什么、你已有经历能证明什么、
+        哪些地方会被筛掉。这个工具会基于真实岗位和真实经历，给你一份可直接复制到 Word 的修改结果。
         </div>
         <div class="trust-row">
-            <div class="trust-pill">不导出乱码文件</div>
-            <div class="trust-pill">不编造数据和职责</div>
-            <div class="trust-pill">支持跳过追问</div>
-            <div class="trust-pill">内置测试样例</div>
+            <div class="trust-pill">先判断匹配度</div>
+            <div class="trust-pill">再改简历表达</div>
+            <div class="trust-pill">不编造经历和数据</div>
+            <div class="trust-pill">结果可直接复制</div>
+        </div>
+        <div class="conversion-strip">
+            <div class="conversion-item"><b>你输入</b><span>目标岗位 JD + 真实经历，测试时也可以一键填样例。</span></div>
+            <div class="conversion-item"><b>系统判断</b><span>岗位要求、已有优势、主要风险和需要补齐的事实。</span></div>
+            <div class="conversion-item"><b>你拿到</b><span>按姓名、教育、经历、技能分好的简历文本。</span></div>
         </div>
         """
     )
 
     with st.container(border=True):
-        st.badge("建议先从这里开始", icon=":material/bolt:", color="green")
-        st.markdown("### 我有目标岗位，准备投递")
+        st.badge("最推荐路径", icon=":material/bolt:", color="green")
+        st.markdown("### 已经有岗位 JD？从这里开始")
         st.markdown(
-            "把 **岗位 JD + 真实经历** 放进去，系统会先判断匹配情况，再输出按姓名、教育、经历、技能分好的简历文本。"
+            "把 **岗位 JD + 真实经历** 放进去。系统会先判断匹配情况，再输出按姓名、教育、经历、技能分好的简历文本。"
+        )
+        st.html(
+            """
+            <div class="cta-note">
+            适合：已经看到一个岗位、准备投递、但不确定简历该删什么、补什么、怎么写得更像岗位需要的人。
+            </div>
+            """
         )
         a, b, c = st.columns(3)
         with a:
-            render_metric_card("输入", "JD + 经历", "也可上传简历文件")
+            render_metric_card("开始成本", "2 段文本", "JD 和经历即可")
         with b:
-            render_metric_card("过程", "诊断 + 追问", "最多 3 个关键问题")
+            render_metric_card("决策价值", "先看风险", "避免盲目投递")
         with c:
-            render_metric_card("输出", "可复制简历", "直接粘贴到 Word")
+            render_metric_card("最终结果", "可复制文本", "直接粘贴到 Word")
         st.button(
             "开始岗位定制",
             icon=":material/arrow_forward:",
@@ -471,8 +516,8 @@ def render_landing() -> None:
     col1, col2 = st.columns(2)
     with col1:
         with st.container(border=True):
-            st.markdown("### 还没确定投什么")
-            st.caption("输入经历和限制条件，先缩小到直接可投、相邻方向和探索方向。")
+            st.markdown("### 暂时没有明确 JD")
+            st.caption("先用已有经历缩小方向，找到值得看的岗位类型。")
             st.button(
                 "探索岗位方向",
                 icon=":material/explore:",
@@ -483,8 +528,8 @@ def render_landing() -> None:
             )
     with col2:
         with st.container(border=True):
-            st.markdown("### 简历还很零散")
-            st.caption("把课程、项目、社团、兼职和技能整理成一份基础简历骨架。")
+            st.markdown("### 简历还没整理好")
+            st.caption("先把课程、项目、社团、兼职和技能整理成基础简历骨架。")
             st.button(
                 "整理基础简历",
                 icon=":material/article:",
@@ -494,7 +539,7 @@ def render_landing() -> None:
                 key="landing_base",
             )
 
-    st.caption("适合内测：应届生、转行、经历零散、需要根据具体 JD 修改简历的用户。")
+    st.caption("更适合：应届生、转行、经历零散、投递前需要按具体 JD 修改简历的人。")
 
 
 def render_diagnosis(diagnosis: dict) -> None:
